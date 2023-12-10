@@ -1,0 +1,248 @@
+definitions:
+  domain.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  domain.FilterSearchInput:
+    properties:
+      payment_narrative:
+        example: contract for the provision of services A11/27123
+        type: string
+      payment_type:
+        enum:
+        - cash
+        - card
+        example: cash
+        type: string
+      period:
+        $ref: '#/definitions/domain.Period'
+      status:
+        enum:
+        - accepted
+        - declined
+        example: accepted
+        type: string
+      terminal_id:
+        example:
+        - 3521
+        - 3522
+        - 3523
+        - 3524
+        - 3525
+        - 3526
+        - 3527
+        - 3528
+        - 3529
+        items:
+          type: integer
+        type: array
+      transaction_id:
+        example: 18
+        type: integer
+    type: object
+  domain.Period:
+    properties:
+      from:
+        description: 'example: from 2023-08-12, to 2023-09-01 must return all transactions
+          for the specified period'
+        example: "2023-08-23T11:56:00.000Z"
+        type: string
+      to:
+        example: "2023-08-24T00:00:00.000Z"
+        type: string
+    required:
+    - from
+    - to
+    type: object
+  domain.StatusResponse:
+    properties:
+      last_download_status:
+        enum:
+        - unknown
+        - in progress
+        - 'skip request: download in progress'
+        - successfully
+        - error
+        example: unknown
+        type: string
+    type: object
+  domain.Transaction:
+    properties:
+      amount_original:
+        example: 1.23
+        type: number
+      amount_total:
+        example: 1.23
+        type: number
+      commission_client:
+        example: 1.23
+        type: number
+      commission_provider:
+        example: 1.23
+        type: number
+      commission_ps:
+        example: 1.23
+        type: number
+      date_input:
+        type: string
+      date_post:
+        type: string
+      partner_object_id:
+        type: integer
+      payee_bnank_account:
+        type: string
+      payee_bnank_mfo:
+        type: integer
+      payee_id:
+        type: integer
+      payee_name:
+        type: string
+      payment_narrative:
+        type: string
+      payment_number:
+        type: string
+      payment_type:
+        type: string
+      request_id:
+        type: integer
+      service:
+        type: string
+      service_id:
+        type: integer
+      status:
+        type: string
+      terminal_id:
+        type: integer
+      transaction_id:
+        type: integer
+    type: object
+  domain.UrlInput:
+    properties:
+      url:
+        example: http://localhost:8080/api/v1/get_csv_mock_remote_service
+        type: string
+    type: object
+info:
+  contact: {}
+  title: bank-transactions API
+  version: "1.0"
+paths:
+  /api/v1/download_remote_transactions/:
+    post:
+      description: |-
+        The request runs fake ~40 seconds. If url=” or download in progress, returns the status of the download.
+
+        The amount of memory consumed depends on the transactionCount and workerCount in the internal\services\worker_pool.go file.
+      operationId: request-download-remote-transactions
+      parameters:
+      - description: ' '
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UrlInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.StatusResponse'
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Request to download remote transactions
+      tags:
+      - Services
+  /api/v1/filtered/csv/:
+    post:
+      operationId: get-filtered-csv
+      parameters:
+      - description: ' '
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/domain.FilterSearchInput'
+      responses:
+        "200":
+          description: OK
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Request filtered csv file
+      tags:
+      - Services
+  /api/v1/filtered/json/:
+    post:
+      operationId: get-filtered-json
+      parameters:
+      - description: ' '
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/domain.FilterSearchInput'
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Transaction'
+            type: array
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Request filtered json
+      tags:
+      - Services
+  /api/v1/get_csv_mock_remote_service/:
+    get:
+      operationId: getSourceFileCSV_as_MockRemoteService-csv
+      parameters:
+      - description: 'From transaction, example: 1'
+        in: query
+        name: from
+        type: integer
+      - description: 'To transaction, example: 5 (TO must be greater than FROM, if
+          both are present at the same time)'
+        in: query
+        name: to
+        type: integer
+      responses:
+        "200":
+          description: OK
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: 'Test service: Gives a CSV file with initial transactions'
+      tags:
+      - Mock remote service
+swagger: "2.0"
